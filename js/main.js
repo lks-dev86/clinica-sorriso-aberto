@@ -2,7 +2,18 @@
   "use strict";
 
   var CLINIC = window.CLINIC;
-  var prefersReducedMotion = false; // TESTE: forçado para false, reverter depois
+  var prefersReducedMotion = false;
+  var motionMedia = window.matchMedia
+    ? window.matchMedia("(prefers-reduced-motion: reduce)")
+    : null;
+  if (motionMedia) {
+    prefersReducedMotion = motionMedia.matches;
+    var onMotionChange = function (e) {
+      prefersReducedMotion = e.matches;
+    };
+    if (motionMedia.addEventListener) motionMedia.addEventListener("change", onMotionChange);
+    else if (motionMedia.addListener) motionMedia.addListener(onMotionChange);
+  }
 
   var ICONS = {
     tooth:
@@ -39,6 +50,60 @@
 
   function openWhatsApp(message) {
     window.open(whatsappUrl(message), "_blank", "noopener");
+  }
+
+  // ---------- Mola (spring) ----------
+  // Anima "value" até "to" como um oscilador amortecido. Sempre parte do
+  // valor e da velocidade atuais (nunca reinicia do alvo), por isso pode ser
+  // redirecionada a qualquer instante — via retarget() — sem saltos visuais.
+  // damping 1 = sem quique (padrão); < 1 = quique, reservado para gestos
+  // que já carregam momento (arrastar e soltar).
+  function createSpring(opts) {
+    var value = opts.from;
+    var velocity = opts.velocity || 0;
+    var to = opts.to;
+    var damping = opts.damping != null ? opts.damping : 1;
+    var response = opts.response || 0.35;
+    var precision = opts.precision || 0.01;
+    var onUpdate = opts.onUpdate;
+    var onComplete = opts.onComplete;
+    var omega = (2 * Math.PI) / response;
+    var k = omega * omega;
+    var c = 2 * damping * omega;
+    var lastTime = null;
+    var stopped = false;
+
+    function frame(time) {
+      if (stopped) return;
+      if (lastTime === null) lastTime = time;
+      var dt = Math.min((time - lastTime) / 1000, 1 / 30);
+      lastTime = time;
+
+      var accel = -k * (value - to) - c * velocity;
+      velocity += accel * dt;
+      value += velocity * dt;
+
+      if (Math.abs(value - to) < precision && Math.abs(velocity) < precision) {
+        value = to;
+        velocity = 0;
+        onUpdate(value, velocity);
+        if (onComplete) onComplete();
+        return;
+      }
+      onUpdate(value, velocity);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+
+    return {
+      retarget: function (newTo, newVelocity) {
+        to = newTo;
+        if (newVelocity !== undefined) velocity = newVelocity;
+      },
+      cancel: function () {
+        stopped = true;
+      }
+    };
   }
 
   // ---------- Aplica marca (cores + textos simples) ----------
@@ -142,13 +207,18 @@
       item.type = "button";
       item.style.transitionDelay = Math.min(i, 5) * 60 + "ms";
       item.addEventListener("click", function () {
-        openLightbox(src);
+        openLightbox(src, item);
       });
       grid.appendChild(item);
     });
   }
 
-  function openLightbox(src) {
+  function openLightbox(src, triggerEl) {
+    // Captura a posição da miniatura antes de qualquer mudança de layout
+    // (o overlay em position:fixed não afeta a grade, mas o scrollbar que
+    // some ao travar o body pode) — a imagem precisa "nascer" exatamente daqui.
+    var originRect = triggerEl ? triggerEl.getBoundingClientRect() : null;
+
     var box = el(
       "div",
       "lightbox",
@@ -161,31 +231,170 @@
     document.body.appendChild(box);
     document.body.style.overflow = "hidden";
 
-    // Adiciona a classe num frame seguinte para que a transição de
-    // entrada (opacidade + escala) de fato dispare a partir do estado fechado.
+    var img = box.querySelector("img");
+    img.draggable = false;
+
+    if (originRect) {
+      var originX = originRect.left + originRect.width / 2;
+      var originY = originRect.top + originRect.height / 2;
+      img.style.transformOrigin =
+        ((originX / window.innerWidth) * 100).toFixed(1) +
+        "% " +
+        ((originY / window.innerHeight) * 100).toFixed(1) +
+        "%";
+    }
+
+    var closed = false;
+    var dragY = 0;
+    var openProgress = 0;
+    var openSpring = null;
+    var dragSpring = null;
+
+    function render() {
+      var scale = 0.3 + 0.7 * openProgress;
+      var dragShrink = 1 - Math.min(Math.abs(dragY) / 900, 0.18);
+      img.style.opacity = String(openProgress);
+      img.style.transform =
+        "translateY(" + dragY.toFixed(1) + "px) scale(" + (scale * dragShrink).toFixed(3) + ")";
+      var dragFade = Math.min(Math.abs(dragY) / 500, 1);
+      box.style.opacity = String(openProgress * (1 - dragFade));
+    }
+
+    function finishClose() {
+      document.body.style.overflow = "";
+      box.remove();
+    }
+
+    function setOpenProgress(target, velocity, onDone) {
+      if (openSpring) openSpring.cancel();
+      openSpring = createSpring({
+        from: openProgress,
+        to: target,
+        velocity: velocity || 0,
+        damping: 1,
+        response: 0.4,
+        onUpdate: function (v) {
+          openProgress = v;
+          render();
+        },
+        onComplete: onDone
+      });
+    }
+
+    function close() {
+      if (closed) return;
+      closed = true;
+      if (dragSpring) dragSpring.cancel();
+      if (prefersReducedMotion) {
+        openProgress = 0;
+        render();
+        setTimeout(finishClose, 160);
+        return;
+      }
+      setOpenProgress(0, 0, finishClose);
+    }
+
+    // Arrastar solta a foto na direção e velocidade do gesto — quanto mais
+    // rápido o "flick", mais longe ela projeta antes de sumir (item 6).
+    function dismissByDrag(velocity) {
+      closed = true;
+      if (openSpring) openSpring.cancel();
+      var target = (dragY >= 0 ? 1 : -1) * (window.innerHeight * 0.9 + 200);
+      // Rede de segurança: a mola converge para o alvo de forma assintótica,
+      // então não esperamos precisão de subpixel para remover o elemento —
+      // do contrário a foto ficaria "presa" fora da tela por quase 1s extra.
+      var safety = setTimeout(finishClose, 500);
+      dragSpring = createSpring({
+        from: dragY,
+        to: target,
+        velocity: velocity,
+        damping: 1,
+        response: 0.4,
+        precision: 1,
+        onUpdate: function (v) {
+          dragY = v;
+          render();
+        },
+        onComplete: function () {
+          clearTimeout(safety);
+          finishClose();
+        }
+      });
+    }
+
+    function springBack(velocity) {
+      dragSpring = createSpring({
+        from: dragY,
+        to: 0,
+        velocity: velocity,
+        damping: 0.8,
+        response: 0.3,
+        precision: 0.5,
+        onUpdate: function (v) {
+          dragY = v;
+          render();
+        }
+      });
+    }
+
+    if (!prefersReducedMotion) {
+      var pointerId = null;
+      var startY = 0;
+      var startDragY = 0;
+      var history = [];
+
+      img.style.cursor = "grab";
+
+      img.addEventListener("pointerdown", function (e) {
+        if (closed) return;
+        pointerId = e.pointerId;
+        img.setPointerCapture(pointerId);
+        if (dragSpring) dragSpring.cancel();
+        startY = e.clientY;
+        startDragY = dragY;
+        history = [{ y: e.clientY, t: e.timeStamp }];
+        img.style.cursor = "grabbing";
+      });
+
+      img.addEventListener("pointermove", function (e) {
+        if (pointerId !== e.pointerId) return;
+        dragY = startDragY + (e.clientY - startY);
+        render();
+        history.push({ y: e.clientY, t: e.timeStamp });
+        if (history.length > 5) history.shift();
+      });
+
+      var endDrag = function (e) {
+        if (pointerId !== e.pointerId || closed) return;
+        pointerId = null;
+        img.style.cursor = "grab";
+        var velocity = 0;
+        if (history.length >= 2) {
+          var first = history[0];
+          var last = history[history.length - 1];
+          var dt = (last.t - first.t) / 1000;
+          if (dt > 0) velocity = (last.y - first.y) / dt;
+        }
+        if (Math.abs(dragY) > 120 || Math.abs(velocity) > 600) {
+          dismissByDrag(velocity);
+        } else {
+          springBack(velocity);
+        }
+      };
+      img.addEventListener("pointerup", endDrag);
+      img.addEventListener("pointercancel", endDrag);
+    }
+
+    render();
     requestAnimationFrame(function () {
-      box.classList.add("is-open");
+      if (prefersReducedMotion) {
+        openProgress = 1;
+        render();
+      } else {
+        setOpenProgress(1, 0);
+      }
     });
 
-    var closing = false;
-    function close() {
-      if (closing) return;
-      closing = true;
-      document.body.style.overflow = "";
-      box.classList.remove("is-open");
-      var done = false;
-      var finish = function () {
-        if (done) return;
-        done = true;
-        box.remove();
-      };
-      if (prefersReducedMotion) {
-        finish();
-      } else {
-        box.addEventListener("transitionend", finish, { once: true });
-        setTimeout(finish, 300); // rede de segurança
-      }
-    }
     box.addEventListener("click", function (e) {
       if (e.target === box || e.target.closest(".lightbox-close")) close();
     });
