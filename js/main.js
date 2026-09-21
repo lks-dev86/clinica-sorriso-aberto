@@ -25,9 +25,13 @@
     sparkle:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v4M12 17v4M4 12h4M16 12h4" stroke-linecap="round"/><path d="M12 8.5 13.6 10.4 12 12.3 10.4 10.4 12 8.5Z"/></svg>',
     implant:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 4h8l-1.4 5.6a2 2 0 0 1-1.94 1.5h-1.32a2 2 0 0 1-1.94-1.5L8 4Z"/><path d="M12 11.5V21" stroke-linecap="round"/><path d="M9 21h6" stroke-linecap="round"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 3.5c0-.3.2-.5.5-.5h9c.3 0 .5.2.5.5 0 2.3-.6 3.6-1.2 4.5H8.2C7.6 7.1 7 5.8 7 3.5Z" stroke-linejoin="round"/><path d="M9.5 10.5h5l-.8 8.2c-.1.7-.7 1.3-1.4 1.3h-.6c-.7 0-1.3-.6-1.4-1.3l-.8-8.2Z" stroke-linejoin="round"/><path d="M9.8 13.5h4.4M10 16.5h4" stroke-linecap="round"/></svg>',
     child:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="7" r="3"/><path d="M6 21c0-3.5 2.7-6 6-6s6 2.5 6 6" stroke-linecap="round"/></svg>'
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="7" r="3"/><path d="M6 21c0-3.5 2.7-6 6-6s6 2.5 6 6" stroke-linecap="round"/></svg>',
+    crown:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 8l4 3.5L12 5l4 6.5L20 8l-1.6 10H5.6L4 8Z" stroke-linejoin="round"/><path d="M6.5 21h11" stroke-linecap="round"/></svg>',
+    gum:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 15c2.6 2 5.6 2 9 0s6.4-2 9 0" stroke-linecap="round"/><path d="M7 14V9c0-2 1.3-3.5 3-3.5.8 0 1.4.4 2 .4s1.2-.4 2-.4c1.7 0 3 1.5 3 3.5v5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   };
 
   var WEEKDAY_LABEL = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -108,7 +112,7 @@
 
   // ---------- Aplica marca (cores + textos simples) ----------
   function applyBrand() {
-    document.title = CLINIC.name + " — Agende sua consulta";
+    document.title = CLINIC.pageTitle || CLINIC.name + " — Agende sua consulta";
     document.querySelectorAll("[data-brand-name]").forEach(function (node) {
       node.textContent = CLINIC.name;
     });
@@ -154,15 +158,15 @@
     CLINIC.treatments.forEach(function (t, i) {
       var card = el(
         "article",
-        "treatment-card reveal",
+        "treatment-card reveal" + (t.featured ? " treatment-card--featured" : ""),
         '<div class="treatment-icon">' +
           (ICONS[t.icon] || ICONS.tooth) +
           "</div>" +
-          "<h3>" +
+          "<div><h3>" +
           t.name +
           "</h3><p>" +
           t.description +
-          "</p>"
+          "</p></div>"
       );
       card.style.transitionDelay = Math.min(i, 5) * 70 + "ms";
       grid.appendChild(card);
@@ -411,14 +415,21 @@
     var grid = document.getElementById("teamGrid");
     if (!grid) return;
     CLINIC.team.forEach(function (member, i) {
-      var card = el(
-        "article",
-        "team-card reveal",
-        '<div class="team-photo"><img src="' +
+      // Sem foto: mostra as iniciais em vez de uma imagem de banco que
+      // pareceria ser a pessoa real.
+      var photoHtml = member.photo
+        ? '<div class="team-photo"><img src="' +
           member.photo +
           '" alt="Foto de ' +
           member.name +
-          '" loading="lazy"></div>' +
+          '" loading="lazy"></div>'
+        : '<div class="team-photo team-photo--mono" aria-hidden="true"><span>' +
+          initials(member.name) +
+          "</span></div>";
+      var card = el(
+        "article",
+        "team-card reveal",
+        photoHtml +
           '<div class="team-info"><h3>' +
           member.name +
           '</h3><p class="team-role">' +
@@ -432,10 +443,29 @@
     });
   }
 
+  // Iniciais ignorando títulos ("Dr. Isaac Luís" -> "IL")
+  function initials(name) {
+    var words = name
+      .split(/\s+/)
+      .filter(function (w) {
+        return !/^(dr|dra|prof|profa)\.?$/i.test(w);
+      });
+    return (words[0] ? words[0][0] : "") + (words.length > 1 ? words[words.length - 1][0] : "");
+  }
+
   // ---------- Convênios ----------
   function renderInsurances() {
     var grid = document.getElementById("insurancesGrid");
     if (!grid) return;
+    if (!CLINIC.insurances || !CLINIC.insurances.length) {
+      // Sem convênios cadastrados: esconde a seção e o link no menu.
+      var section = document.getElementById("convenios");
+      if (section) section.hidden = true;
+      document.querySelectorAll('a[href="#convenios"]').forEach(function (a) {
+        a.hidden = true;
+      });
+      return;
+    }
     CLINIC.insurances.forEach(function (name) {
       grid.appendChild(el("span", "insurance-badge", name));
     });
@@ -589,6 +619,7 @@
     days.forEach(function (date) {
       var opt = document.createElement("option");
       opt.value = formatDateValue(date);
+      opt.dataset.weekday = String(date.getDay());
       opt.textContent =
         WEEKDAY_LABEL[date.getDay()] +
         ", " +
@@ -598,13 +629,27 @@
       daySelect.appendChild(opt);
     });
 
-    Object.keys(CLINIC.periods).forEach(function (key) {
-      var p = CLINIC.periods[key];
-      var opt = document.createElement("option");
-      opt.value = p.label;
-      opt.textContent = p.label + " (" + p.range + ")";
-      periodSelect.appendChild(opt);
-    });
+    // Só oferece os períodos em que a clínica atende no dia escolhido
+    // (ex.: sábado só de manhã), preservando a escolha atual quando possível.
+    function renderPeriods() {
+      var selected = daySelect.options[daySelect.selectedIndex];
+      var weekday = selected ? Number(selected.dataset.weekday) : null;
+      var previous = periodSelect.value;
+      periodSelect.innerHTML = "";
+      Object.keys(CLINIC.periods).forEach(function (key) {
+        var p = CLINIC.periods[key];
+        if (p.days && weekday !== null && p.days.indexOf(weekday) === -1) return;
+        var opt = document.createElement("option");
+        opt.value = p.label;
+        opt.textContent = p.range ? p.label + " (" + p.range + ")" : p.label;
+        periodSelect.appendChild(opt);
+      });
+      Array.prototype.forEach.call(periodSelect.options, function (opt) {
+        if (opt.value === previous) periodSelect.value = previous;
+      });
+    }
+    renderPeriods();
+    daySelect.addEventListener("change", renderPeriods);
 
     CLINIC.treatments.forEach(function (t) {
       var opt = document.createElement("option");
@@ -767,6 +812,21 @@
     });
   }
 
+  // Alterna o fundo das seções (base / azul-gelo) só entre as que estão
+  // visíveis — assim, se uma seção for ocultada (ex.: Convênios sem dados),
+  // duas seções vizinhas nunca ficam com a mesma cor.
+  function alternateSectionBackgrounds() {
+    var visible = Array.prototype.filter.call(
+      document.querySelectorAll(".section"),
+      function (s) {
+        return !s.hidden;
+      }
+    );
+    visible.forEach(function (section, i) {
+      section.classList.toggle("section--alt", i % 2 === 1);
+    });
+  }
+
   function init() {
     applyBrand();
     renderHero();
@@ -775,6 +835,7 @@
     renderGallery();
     renderTeam();
     renderInsurances();
+    alternateSectionBackgrounds();
     renderLocation();
     renderFaq();
     renderFooter();

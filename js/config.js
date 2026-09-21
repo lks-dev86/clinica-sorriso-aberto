@@ -14,103 +14,124 @@
  */
 window.CLINIC = {
   // ---------- Identidade ----------
-  name: "Clínica Sorriso Aberto",
-  shortName: "Sorriso Aberto",
-  tagline: "Odontologia completa, com cuidado e atenção em cada etapa.",
+  name: "Clínica Odontológica Dr. Isaac Luís",
+  shortName: "Dr. Isaac Luís",
+  pageTitle:
+    "Clínica Odontológica Dr. Isaac Luís | Implantes Dentários | Teresina - PI",
+  tagline:
+    "Implantes dentários e odontologia geral no Saci, em Teresina — com explicação clara em cada etapa.",
 
   // ---------- Cores (aplicadas via CSS custom properties) ----------
   colors: {
-    primary: "#0F5C4E",       // verde-petróleo — cor principal da marca
-    primaryDark: "#0A3D33",   // usada em hovers/gradientes
-    secondary: "#F5EFE6",     // creme — fundos alternados
-    accent: "#C9A227",        // dourado suave — detalhes e destaques
-    background: "#FBF9F5",    // fundo geral da página
+    primary: "#216EB4",       // azul do logo — cor principal da marca
+    primaryDark: "#0F3A6B",   // azul profundo: gradientes, rodapé, hovers
+    secondary: "#EAF1F5",     // azul-gelo — fundos alternados
+    accent: "#5F7F0B",        // verde-limão escurecido (do logo) — números e detalhes sobre fundo claro
+    accentBright: "#B6D32D",  // verde-limão do logo — detalhes sobre fundo escuro
+    background: "#F7FAFB",    // fundo geral da página
     surface: "#FFFFFF",       // cartões e superfícies
-    text: "#1B2521",          // texto principal
-    textMuted: "#57665F",     // texto secundário
-    whatsapp: "#25D366"       // verde oficial do WhatsApp (botão)
+    text: "#0F1E2E",          // texto principal
+    textMuted: "#4B5D6E",     // texto secundário
+    whatsapp: "#157F3D"       // verde do botão de WhatsApp (escurecido p/ contraste com texto branco)
   },
 
   // ---------- WhatsApp ----------
   whatsapp: {
     // Somente dígitos, com DDI 55 + DDD + número (sem espaços, sem "+")
-    number: "5586994364794",
+    number: "5586998245845",
     defaultMessage:
-      "Olá! Vim pelo site da Clínica Sorriso Aberto e gostaria de agendar uma consulta."
+      "Olá! Vim pelo site da Clínica Odontológica Dr. Isaac Luís e gostaria de agendar uma avaliação."
   },
 
   // ---------- Responsável técnico (obrigatório no rodapé) ----------
   responsible: {
-    name: "Dr. João Mendes",
-    cro: "CRO-PI 12345"
+    name: "Dr. Isaac Luís",
+    cro: "CRO-PI 3170"
   },
 
   // ---------- Endereço e mapa ----------
   address: {
-    street: "Av. Frei Serafim, 2200",
-    complement: "Sala 4",
-    neighborhood: "Centro",
+    street: "Rua 7, 60",
+    complement: "",
+    neighborhood: "Saci",
     city: "Teresina",
     state: "PI",
-    zip: "64000-020",
+    zip: "64020-455",
     // Usado apenas para montar o link "Como chegar" e o embed do mapa
-    mapsQuery: "Av. Frei Serafim, 2200, Centro, Teresina, PI"
+    mapsQuery:
+      "Clínica Odontológica Dr. Isaac Luís, R. 7, 60 - Saci, Teresina - PI, 64020-455"
   },
 
   // ---------- Funcionamento ----------
   // 0=domingo ... 6=sábado — dias em que a clínica atende
   workingDays: [1, 2, 3, 4, 5, 6],
   hoursList: [
-    { days: "Segunda a sexta", time: "08:00 – 19:00" },
-    { days: "Sábado", time: "08:00 – 13:00" },
+    { days: "Segunda a quinta", time: "08:00 – 18:40" },
+    { days: "Sexta", time: "08:00 – 19:00" },
+    { days: "Sábado", time: "08:00 – 11:40" },
     { days: "Domingo", time: "Fechado" }
   ],
+  // "days" limita em quais dias da semana o período aparece no agendamento
+  // (aos sábados só há atendimento pela manhã). "range" é opcional.
   periods: {
-    morning: { label: "Manhã", range: "08:00 – 12:00" },
-    afternoon: { label: "Tarde", range: "13:00 – 19:00" }
+    morning: { label: "Manhã", days: [1, 2, 3, 4, 5, 6] },
+    afternoon: { label: "Tarde", days: [1, 2, 3, 4, 5] }
   },
 
   // ---------- Imagens ----------
   // Todas via Unsplash (link direto). Troque a URL para usar outra foto —
   // mantenha o formato "?auto=format&fit=crop&w=...&q=80" para bom desempenho.
+  // ATENÇÃO: a foto do hero ainda é de banco de imagens (Unsplash), não da
+  // clínica real. O ideal é trocar por uma foto real, horizontal e em alta
+  // resolução (mín. 1600 px de largura).
   images: {
     // Ambiente acolhedor, consulta em andamento — usada no hero
     hero: "https://images.unsplash.com/photo-1777331903190-341a3dd0441b?auto=format&fit=crop&w=1600&q=80",
     // Logo/ícone da marca — usado no favicon e ao lado do nome no cabeçalho e no rodapé
-    logo: "assets/logo.png"
+    // (PNG circular com transparência, gerado a partir de Logo_Issac2.jpg — o JPG
+    // original tem o "xadrez de transparência" gravado nos pixels)
+    logo: "assets/logo-isaac.png"
   },
 
   // ---------- Tratamentos (sem preço, sem promessa de resultado) ----------
+  // "featured: true" destaca o card em largura total (use em apenas um).
   treatments: [
     {
-      icon: "tooth",
-      name: "Clínico Geral",
-      description: "Avaliação, diagnóstico e cuidados odontológicos do dia a dia."
+      icon: "implant",
+      name: "Implantes dentários",
+      description:
+        "Avaliação e planejamento da reposição de dentes ausentes com implantes, incluindo casos de reabilitação total (protocolo). O cirurgião-dentista explica cada etapa e as opções indicadas para o seu caso.",
+      featured: true
     },
     {
-      icon: "shield",
-      name: "Prevenção e Limpeza",
-      description: "Profilaxia e orientação para manutenção da saúde bucal."
+      icon: "crown",
+      name: "Prótese dentária",
+      description: "Reabilitação de dentes ausentes ou comprometidos, definida após avaliação clínica."
+    },
+    {
+      icon: "sparkle",
+      name: "Estética dental",
+      description: "Clareamento, facetas e outros procedimentos estéticos avaliados caso a caso."
     },
     {
       icon: "braces",
       name: "Ortodontia",
-      description: "Planejamento e acompanhamento do alinhamento dos dentes."
+      description: "Planejamento e acompanhamento do alinhamento dos dentes e da mordida."
     },
     {
-      icon: "sparkle",
-      name: "Estética Dental",
-      description: "Procedimentos estéticos avaliados caso a caso, com o cirurgião-dentista."
+      icon: "tooth",
+      name: "Tratamento de canal",
+      description: "Avaliação e tratamento de dentes com comprometimento interno."
     },
     {
-      icon: "implant",
-      name: "Implantodontia",
-      description: "Avaliação e planejamento de reabilitação com implantes."
+      icon: "gum",
+      name: "Periodontia",
+      description: "Cuidado com a saúde das gengivas e dos tecidos de sustentação dos dentes."
     },
     {
-      icon: "child",
-      name: "Odontopediatria",
-      description: "Atendimento odontológico voltado para crianças e adolescentes."
+      icon: "shield",
+      name: "Clínica geral e prevenção",
+      description: "Consulta de avaliação, limpeza e orientação para manutenção da saúde bucal."
     }
   ],
 
@@ -122,69 +143,51 @@ window.CLINIC = {
     },
     {
       title: "Recepção e anamnese",
-      description: "Conversamos sobre seu histórico e suas necessidades."
+      description: "Conversamos sobre seu histórico de saúde e suas necessidades."
     },
     {
       title: "Avaliação clínica",
-      description: "Exame clínico detalhado para entender sua situação atual."
+      description: "Exame clínico detalhado e, quando necessário, solicitação de exames de imagem."
     },
     {
       title: "Plano de cuidado",
-      description: "Explicamos as opções de tratamento indicadas para o seu caso."
+      description: "Explicamos as opções de tratamento indicadas para o seu caso e as etapas envolvidas."
     }
   ],
 
   // ---------- Estrutura da clínica (galeria) ----------
+  // Em telas estreitas, se o número de fotos for ímpar, a primeira ocupa a
+  // largura toda para a grade fechar sem buracos.
   gallery: [
-    "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1704455306251-b4634215d98f?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1643916800611-1302e8d27c38?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1762625570087-6d98fca29531?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1752842936213-143c9456e6ea?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1643660527095-bfb19b49994a?auto=format&fit=crop&w=900&q=80"
+    "assets/Espaço_1.jpg",
+    "assets/Espaço_2.jpg",
+    "assets/Espaço_3.jpg"
   ],
 
   // ---------- Equipe ----------
+  // Sem "photo", o cartão mostra as iniciais do nome.
   team: [
     {
-      name: "Dr. João Mendes",
+      name: "Dr. Isaac Luís",
       role: "Cirurgião-Dentista Responsável",
-      cro: "CRO-PI 12345",
-      photo: "https://images.unsplash.com/photo-1622902046580-2b47f47f5471?auto=format&fit=crop&w=500&q=80"
-    },
-    {
-      name: "Dra. Camila Ribeiro",
-      role: "Cirurgiã-Dentista",
-      cro: "CRO-PI 54321",
-      photo: "https://images.unsplash.com/photo-1678695972687-033fa0bdbac9?auto=format&fit=crop&w=500&q=80"
-    },
-    {
-      name: "Dra. Larissa Souza",
-      role: "Cirurgiã-Dentista",
-      cro: "CRO-PI 67890",
-      photo: "https://images.unsplash.com/photo-1662837775286-7e6258c7c595?auto=format&fit=crop&w=500&q=80"
+      cro: "CRO-PI 3170",
+      photo: "assets/Foto_doutor.jpg"
     }
   ],
 
   // ---------- Convênios aceitos ----------
-  insurances: [
-    "Bradesco Dental",
-    "Amil Dental",
-    "SulAmérica Odonto",
-    "OdontoPrev",
-    "MetLife Odonto",
-    "Particular"
-  ],
+  // Lista vazia = a seção e o link do menu ficam ocultos.
+  insurances: [],
 
   // ---------- Dúvidas frequentes ----------
   faq: [
     {
       question: "Preciso levar exames para a primeira consulta?",
-      answer: "Se você já tiver radiografias ou exames recentes, é bom trazê-los. Caso não tenha, não é impedimento para o atendimento."
+      answer: "Se você já tiver radiografias ou tomografias recentes, é bom trazê-las. Caso não tenha, o cirurgião-dentista avalia na consulta se serão necessários e orienta você."
     },
     {
-      question: "A clínica atende convênios?",
-      answer: "Atendemos alguns convênios odontológicos e também atendimento particular. Confirme seu plano pelo WhatsApp."
+      question: "Como é a avaliação para colocar implantes?",
+      answer: "O cirurgião-dentista avalia sua saúde bucal e geral, solicita os exames necessários e explica se o implante é indicado no seu caso, quais são as etapas e o tempo envolvidos."
     },
     {
       question: "Como funciona o agendamento?",
@@ -195,18 +198,18 @@ window.CLINIC = {
       answer: "Sim, é só nos avisar pelo WhatsApp com antecedência para reorganizarmos o horário."
     },
     {
-      question: "Atendem crianças?",
-      answer: "Sim, temos atendimento de odontopediatria para crianças e adolescentes."
+      question: "A clínica atende convênios?",
+      answer: "Para saber sobre planos e formas de atendimento, fale diretamente com a nossa equipe pelo WhatsApp."
     },
     {
       question: "Onde a clínica fica localizada?",
-      answer: "Estamos na Av. Frei Serafim, 2200, no Centro de Teresina/PI. Veja o mapa e o botão \"Como chegar\" na seção de localização."
+      answer: "Estamos na Rua 7, 60, no bairro Saci, em Teresina/PI. Veja o mapa e o botão \"Como chegar\" na seção de localização."
     }
   ],
 
   // ---------- Redes sociais ----------
   social: {
-    instagram: "https://instagram.com/sorrisoaberto"
+    instagram: "https://www.instagram.com/odonto.isaacluis/"
   },
 
   // ---------- Aviso legal (rodapé) ----------
